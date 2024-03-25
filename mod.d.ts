@@ -25,6 +25,11 @@ declare class _Interpreter {
         descriptor ?: object
     ) : undefined | (( value : any ) => void )
 
+    createNativeFunction (
+        func : Function ,
+        isContructor : boolean
+    ) : object
+
     static NONCONFIGURABLE_READONLY_NONENUMERABLE_DESCRIPTOR : object
     static READONLY_NONENUMERABLE_DESCRIPTOR : object
     static NONENUMERABLE_DESCRIPTOR : object
