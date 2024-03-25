@@ -2,7 +2,7 @@
 export type { InitializationFunction , _Interpreter as Interpreter }
 
 type InitializationFunction = (
-    interpreter : InstanceType<Interpreter> ,
+    interpreter : InstanceType<_Interpreter> ,
     global : any
 ) => void
 
