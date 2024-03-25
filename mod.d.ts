@@ -1,5 +1,5 @@
 
-export type { InitializationFunction }
+export type { InitializationFunction , _Interpreter as Interpreter }
 
 type InitializationFunction = (
     interpreter : Interpreter ,
@@ -7,7 +7,7 @@ type InitializationFunction = (
 ) => void
 
 
-declare class Interpreter {
+declare class _Interpreter {
 
     readonly value : any
 
@@ -28,5 +28,5 @@ declare class Interpreter {
 
 
 declare global {
-    var Interpreter : Interpreter
+    var Interpreter : typeof _Interpreter
 }
