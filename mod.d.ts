@@ -9,6 +9,7 @@ type InitializationFunction = (
 
 declare class _Interpreter {
 
+    readonly OBJECT_PROTO : object
     readonly value : any
 
     constructor (
@@ -28,6 +29,10 @@ declare class _Interpreter {
     createNativeFunction (
         func : Function ,
         isContructor : boolean
+    ) : object
+
+    createObjectProto (
+        prototype : object
     ) : object
 
     static NONCONFIGURABLE_READONLY_NONENUMERABLE_DESCRIPTOR : object
