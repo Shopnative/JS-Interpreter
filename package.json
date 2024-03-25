@@ -1,3 +1,7 @@
 {
-     "module" : "interpreter.js"
+     "module" : "mod.ts" ,
+
+     "dependencies" : {
+         "acorn": "^8.11.3"
+     }
 }
