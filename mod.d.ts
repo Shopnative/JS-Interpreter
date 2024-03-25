@@ -25,9 +25,11 @@ declare class _Interpreter {
         descriptor ?: object
     ) : undefined | (( value : any ) => void )
 
-    initGlobal (
-        object : any
-    ) : void
+    static NONCONFIGURABLE_READONLY_NONENUMERABLE_DESCRIPTOR : object
+    static READONLY_NONENUMERABLE_DESCRIPTOR : object
+    static NONENUMERABLE_DESCRIPTOR : object
+    static READONLY_DESCRIPTOR : object
+    static VARIABLE_DESCRIPTOR : object
 }
 
 
