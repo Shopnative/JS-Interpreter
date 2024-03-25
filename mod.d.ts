@@ -28,5 +28,5 @@ declare class Interpreter {
 
 
 declare global {
-    var Interpreter : typeof Interpreter
+    var Interpreter : Interpreter
 }
