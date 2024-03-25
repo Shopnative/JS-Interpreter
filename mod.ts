@@ -7,4 +7,4 @@ declare global {
 
 globalThis.acorn = Acorn
 
-import './js-interpreter'
+import './interpreter'
