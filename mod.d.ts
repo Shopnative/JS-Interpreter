@@ -23,7 +23,11 @@ declare class _Interpreter {
         name : string ,
         value : any ,
         descriptor ?: object
-    ) : undefined | (() => void)
+    ) : undefined | (( value : any ) => void )
+
+    initGlobal (
+        object : any
+    ) : void
 }
 
 
