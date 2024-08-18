@@ -35,6 +35,7 @@ var Interpreter = function(code, opt_initFunc) {
   this.ast = ast;
   /**
    * Sorted array of setTimeout/setInterval tasks waiting to execute.
+   * @type {!Array<!Interpreter.Task>}
    */
   this.tasks = [];
   this.initFunc_ = opt_initFunc;
@@ -42,6 +43,10 @@ var Interpreter = function(code, opt_initFunc) {
    * True if the interpreter is paused while waiting for an async function.
    */
   this.paused_ = false;
+  /**
+   * Lines of code to execute during startup of Interpreter.
+   * @type {!Array<string>|undefined}
+   */
   this.polyfills_ = [];
   // Unique identifier for native functions.  Used in serialization.
   this.functionCounter_ = 0;
@@ -721,6 +726,7 @@ Interpreter.prototype.initFunction = function(globalObject) {
   this.setNativeFunctionPrototype(this.FUNCTION, 'apply', wrapper);
 
   this.polyfills_.push(
+/* POLYFILL START */
 // Flatten the apply args list to remove any inheritance or getter functions.
 "(function() {",
   "var apply_ = Function.prototype.apply;",
@@ -731,7 +737,9 @@ Interpreter.prototype.initFunction = function(globalObject) {
     "}",
     "return apply_(this, thisArg, a2);",  // Note: Non-standard 'this' arg.
   "};",
-"})();");
+"})();"
+/* POLYFILL END */
+);
 
   wrapper = function call(thisArg /*, var_args */) {
     var state =
@@ -750,6 +758,7 @@ Interpreter.prototype.initFunction = function(globalObject) {
   this.setNativeFunctionPrototype(this.FUNCTION, 'call', wrapper);
 
   this.polyfills_.push(
+/* POLYFILL START */
 // Polyfill copied from:
 // developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_objects/Function/bind
 "Object.defineProperty(Function.prototype, 'bind',",
@@ -774,7 +783,9 @@ Interpreter.prototype.initFunction = function(globalObject) {
     "return fBound;",
   "}",
 "});",
-"");
+""
+/* POLYFILL END */
+);
 
   // Function has no parent to inherit from, so it needs its own mandatory
   // toString and valueOf functions.
@@ -882,6 +893,7 @@ Interpreter.prototype.initObject = function(globalObject) {
 
   // Add a polyfill to handle create's second argument.
   this.polyfills_.push(
+/* POLYFILL START */
 "(function() {",
   "var create_ = Object.create;",
   "Object.create = function create(proto, props) {",
@@ -890,7 +902,9 @@ Interpreter.prototype.initObject = function(globalObject) {
     "return obj;",
   "};",
 "})();",
-"");
+""
+/* POLYFILL END */
+);
 
   wrapper = function defineProperty(obj, prop, descriptor) {
     prop = String(prop);
@@ -918,6 +932,7 @@ Interpreter.prototype.initObject = function(globalObject) {
 
   this.polyfills_.push(
 // Flatten the descriptor to remove any inheritance or getter functions.
+/* POLYFILL START */
 "(function() {",
   "var defineProperty_ = Object.defineProperty;",
   "Object.defineProperty = function defineProperty(obj, prop, d1) {",
@@ -942,7 +957,9 @@ Interpreter.prototype.initObject = function(globalObject) {
     "return obj;",
   "}",
 "});",
-"");
+""
+/* POLYFILL END */
+);
 
   wrapper = function getOwnPropertyDescriptor(obj, prop) {
     if (!(obj instanceof Interpreter.Object)) {
@@ -1097,14 +1114,16 @@ Interpreter.prototype.initArray = function(globalObject) {
   this.ARRAY_PROTO.class = 'Array';
 
   this.polyfills_.push(
+/* POLYFILL START */
 "(function() {",
-  "function createArrayMethod_(f) {",
-    "Object.defineProperty(Array.prototype, f.name,",
-        "{configurable: true, writable: true, value: f});",
+  "function createArrayMethod_(name, func) {",
+    "Object.defineProperty(func, 'name', {value: name});",
+    "Object.defineProperty(Array.prototype, name,",
+        "{configurable: true, writable: true, value: func});",
   "}",
 
-  "createArrayMethod_(",
-    "function pop() {",
+  "createArrayMethod_('pop',",
+    "function() {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "if (!len || len < 0) {",
@@ -1119,8 +1138,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function push(var_args) {",
+  "createArrayMethod_('push',",
+    "function(var_args) {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "for (var i = 0; i < arguments.length; i++) {",
@@ -1132,8 +1151,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function shift() {",
+  "createArrayMethod_('shift',",
+    "function() {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "if (!len || len < 0) {",
@@ -1154,8 +1173,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function unshift(var_args) {",
+  "createArrayMethod_('unshift',",
+    "function(var_args) {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "if (!len || len < 0) {",
@@ -1175,8 +1194,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function reverse() {",
+  "createArrayMethod_('reverse',",
+    "function() {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "if (!len || len < 2) {",
@@ -1200,8 +1219,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function indexOf(searchElement, fromIndex) {",
+  "createArrayMethod_('indexOf',",
+    "function(searchElement, fromIndex) {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "var n = fromIndex | 0;",
@@ -1219,8 +1238,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function lastIndexOf(searchElement, fromIndex) {",
+  "createArrayMethod_('lastIndexOf',",
+    "function(searchElement, fromIndex) {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "if (!len) {",
@@ -1244,8 +1263,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function slice(start, end) {",
+  "createArrayMethod_('slice',",
+    "function(start, end) {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       // Handle negative value for "start"
@@ -1275,8 +1294,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function splice(start, deleteCount, var_args) {",
+  "createArrayMethod_('splice',",
+    "function(start, deleteCount, var_args) {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "start |= 0;",
@@ -1338,8 +1357,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function concat(var_args) {",
+  "createArrayMethod_('concat',",
+    "function(var_args) {",
       "if (!this) throw TypeError();",
       "var o = Object(this);",
       "var cloned = [];",
@@ -1361,8 +1380,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function join(opt_separator) {",
+  "createArrayMethod_('join',",
+    "function(opt_separator) {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "var sep = typeof opt_separator === 'undefined' ?",
@@ -1378,8 +1397,8 @@ Interpreter.prototype.initArray = function(globalObject) {
 
   // Polyfill copied from:
   // developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array/every
-  "createArrayMethod_(",
-    "function every(callback, thisArg) {",
+  "createArrayMethod_('every',",
+    "function(callback, thisArg) {",
       "if (!this || typeof callback !== 'function') throw TypeError();",
       "var t, k = 0;",
       "var o = Object(this), len = o.length >>> 0;",
@@ -1394,8 +1413,8 @@ Interpreter.prototype.initArray = function(globalObject) {
 
   // Polyfill copied from:
   // developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
-  "createArrayMethod_(",
-    "function filter(callback, var_args) {",
+  "createArrayMethod_('filter',",
+    "function(callback, var_args) {",
       "if (!this || typeof callback !== 'function') throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "var res = [];",
@@ -1412,8 +1431,8 @@ Interpreter.prototype.initArray = function(globalObject) {
 
   // Polyfill copied from:
   // developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
-  "createArrayMethod_(",
-    "function forEach(callback, thisArg) {",
+  "createArrayMethod_('forEach',",
+    "function(callback, thisArg) {",
       "if (!this || typeof callback !== 'function') throw TypeError();",
       "var t, k = 0;",
       "var o = Object(this), len = o.length >>> 0;",
@@ -1427,8 +1446,8 @@ Interpreter.prototype.initArray = function(globalObject) {
 
   // Polyfill copied from:
   // developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array/map
-  "createArrayMethod_(",
-    "function map(callback, thisArg) {",
+  "createArrayMethod_('map',",
+    "function(callback, thisArg) {",
       "if (!this || typeof callback !== 'function') throw TypeError();",
       "var t, k = 0;",
       "var o = Object(this), len = o.length >>> 0;",
@@ -1444,8 +1463,8 @@ Interpreter.prototype.initArray = function(globalObject) {
 
   // Polyfill copied from:
   // developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce
-  "createArrayMethod_(",
-    "function reduce(callback /*, initialValue*/) {",
+  "createArrayMethod_('reduce',",
+    "function(callback /*, initialValue*/) {",
       "if (!this || typeof callback !== 'function') throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "var k = 0, value;",
@@ -1467,8 +1486,8 @@ Interpreter.prototype.initArray = function(globalObject) {
 
   // Polyfill copied from:
   // developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array/ReduceRight
-  "createArrayMethod_(",
-    "function reduceRight(callback /*, initialValue*/) {",
+  "createArrayMethod_('reduceRight',",
+    "function(callback /*, initialValue*/) {",
       "if (!this || typeof callback !== 'function') throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "var k = len - 1, value;",
@@ -1490,8 +1509,8 @@ Interpreter.prototype.initArray = function(globalObject) {
 
   // Polyfill copied from:
   // developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array/some
-  "createArrayMethod_(",
-    "function some(callback /*, thisArg*/) {",
+  "createArrayMethod_('some',",
+    "function(callback /*, thisArg*/) {",
       "if (!this || typeof callback !== 'function') throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "var thisArg = arguments.length >= 2 ? arguments[1] : void 0;",
@@ -1502,8 +1521,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function sort(opt_comp) {",  // Bubble sort!
+  "createArrayMethod_('sort',",
+    "function(opt_comp) {",  // Bubble sort!
       "if (!this) throw TypeError();",
       "if (typeof opt_comp !== 'function') {",
         "opt_comp = undefined;",
@@ -1534,8 +1553,8 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 
-  "createArrayMethod_(",
-    "function toLocaleString() {",
+  "createArrayMethod_('toLocaleString',",
+    "function() {",
       "if (!this) throw TypeError();",
       "var o = Object(this), len = o.length >>> 0;",
       "var out = [];",
@@ -1546,7 +1565,9 @@ Interpreter.prototype.initArray = function(globalObject) {
     "}",
   ");",
 "})();",
-"");
+""
+/* POLYFILL END */
+);
 };
 
 /**
@@ -1760,6 +1781,7 @@ Interpreter.prototype.initString = function(globalObject) {
   this.setAsyncFunctionPrototype(this.STRING, 'replace', wrapper);
   // Add a polyfill to handle replace's second argument being a function.
   this.polyfills_.push(
+/* POLYFILL START */
 "(function() {",
   "var replace_ = String.prototype.replace;",
   "String.prototype.replace = function replace(substr, newSubstr) {",
@@ -1768,7 +1790,8 @@ Interpreter.prototype.initString = function(globalObject) {
       "return replace_.call(this, substr, newSubstr);",
     "}",
     "var str = this;",
-    "if (substr instanceof RegExp) {",  // string.replace(regexp, function)
+    "if (substr instanceof RegExp) {",
+      // string.replace(regexp, function)
       "var subs = [];",
       "var m = substr.exec(str);",
       "while (m) {",
@@ -1778,21 +1801,24 @@ Interpreter.prototype.initString = function(globalObject) {
         "m = substr.global ? substr.exec(str) : null;",
       "}",
       "for (var i = subs.length - 1; i >= 0; i--) {",
-        "str = str.substring(0, subs[i][0]) + subs[i][2] + " +
+        "str = str.substring(0, subs[i][0]) + subs[i][2] + ",
             "str.substring(subs[i][0] + subs[i][1]);",
       "}",
-    "} else {",                         // string.replace(string, function)
+    "} else {",
+      // string.replace(string, function)
       "var i = str.indexOf(substr);",
       "if (i !== -1) {",
         "var inject = newSubstr(str.substr(i, substr.length), i, str);",
-        "str = str.substring(0, i) + inject + " +
+        "str = str.substring(0, i) + inject + ",
             "str.substring(i + substr.length);",
       "}",
     "}",
     "return str;",
   "};",
 "})();",
-"");
+""
+/* POLYFILL END */
+);
 };
 
 /**
@@ -2035,12 +2061,15 @@ Interpreter.prototype.initRegExp = function(globalObject) {
 
   // Use polyfill to avoid complexity of regexp threads.
   this.polyfills_.push(
+/* POLYFILL START */
 "Object.defineProperty(RegExp.prototype, 'test',",
     "{configurable: true, writable: true, value:",
   "function test(str) {",
     "return !!this.exec(str);",
   "}",
-"});");
+"});"
+/* POLYFILL END */
+);
 
   wrapper = function exec(string, callback) {
     var regexp = this.data;
@@ -3282,11 +3311,17 @@ Interpreter.prototype.unwind = function(type, value, label) {
         if (type === Interpreter.Completion.RETURN) {
           state.value = value;
           return;
-        } else if (type !== Interpreter.Completion.THROW) {
+        } else if (type === Interpreter.Completion.BREAK ||
+            type === Interpreter.Completion.CONTINUE) {
           throw Error('Unsyntactic break/continue not rejected by Acorn');
         }
         break;
       case 'Program':
+        if (type === Interpreter.Completion.RETURN) {
+          // While a return outside of a function call isn't normally possible,
+          // this can happen if a setTimeout/setInterval task returns.
+          return;
+        }
         // Don't pop the stateStack.
         // Leave the root scope on the tree in case the program is appended to.
         state.done = true;
