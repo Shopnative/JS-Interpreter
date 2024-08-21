@@ -1,8 +1,8 @@
 {
-     "module" : "mod.ts" ,
-     "types" : "mod.d.ts" ,
-
-     "dependencies" : {
-         "acorn": "^8.11.3"
-     }
+   "module" : "mod.ts" ,
+    "types": "mod.d.ts",
+    
+    "dependencies": {
+        "acorn": "^8.12.1"
+    }
 }

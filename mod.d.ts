@@ -35,11 +35,21 @@ declare class _Interpreter {
         prototype : object
     ) : object
 
+    initGlobal (
+        object : any
+    ) : void
+
+    pseudoToNative (
+        object : any ,
+        cycles ?: any
+    ) : any
+
     static NONCONFIGURABLE_READONLY_NONENUMERABLE_DESCRIPTOR : object
     static READONLY_NONENUMERABLE_DESCRIPTOR : object
     static NONENUMERABLE_DESCRIPTOR : object
     static READONLY_DESCRIPTOR : object
     static VARIABLE_DESCRIPTOR : object
+    
 }
 
 

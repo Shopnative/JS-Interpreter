@@ -2,3 +2,4 @@ test262-es5-tests/
 
 test262.js
 /compiler.jar
+node_modules/
